@@ -8,11 +8,8 @@ const canvas = document.querySelector("canvas"),
   saveImg = document.querySelector(".save-img"),
   savePdfBtn = document.querySelector(".save-pdf"),
   shapeSelect = document.querySelector("#shape-select"),
-  increaseCanvasBtn = document.getElementById('increase-canvas'),
-  decreaseCanvasBtn = document.getElementById('decrease-canvas'),
   ctx = canvas.getContext("2d");
 
-// global variables with default value
 let prevMouseX, prevMouseY, snapshot,
   isDrawing = false,
   selectedTool = "brush",
@@ -31,7 +28,6 @@ window.addEventListener("load", () => {
   setCanvasBackground();
 });
 
-// Event listener for window resize to adjust canvas dimensions
 window.addEventListener("resize", () => {
   canvas.width = canvas.offsetWidth;
   canvas.height = canvas.offsetHeight;
@@ -93,6 +89,36 @@ const drawHexagon = (e) => {
   fillColor.checked ? ctx.fill() : ctx.stroke();
 }
 
+const drawParallelogram = (e) => {
+  ctx.beginPath();
+  const width = Math.abs(prevMouseX - e.offsetX);
+  const height = Math.abs(prevMouseY - e.offsetY);
+  const tilt = prevMouseY > e.offsetY ? -1 : 1;
+  ctx.moveTo(prevMouseX, prevMouseY);
+  ctx.lineTo(prevMouseX + width, prevMouseY);
+  ctx.lineTo(prevMouseX + width - tilt * height, prevMouseY + height);
+  ctx.lineTo(prevMouseX - tilt * height, prevMouseY + height);
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawDiamond = (e) => {
+  ctx.beginPath();
+  ctx.moveTo((prevMouseX + e.offsetX) / 2, prevMouseY);
+  ctx.lineTo(e.offsetX, (prevMouseY + e.offsetY) / 2);
+  ctx.lineTo((prevMouseX + e.offsetX) / 2, e.offsetY);
+  ctx.lineTo(prevMouseX, (prevMouseY + e.offsetY) / 2);
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawLine = (e) => {
+  ctx.beginPath();
+  ctx.moveTo(prevMouseX, prevMouseY);
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+}
+
 const startDraw = (e) => {
   isDrawing = true;
   prevMouseX = e.offsetX;
@@ -122,11 +148,20 @@ const drawing = (e) => {
     drawArrow(e);
   } else if (selectedTool === "hexagon") {
     drawHexagon(e);
+  } else if (selectedTool === "parallelogram") {
+    drawParallelogram(e);
+  } else if (selectedTool === "diamond") {
+    drawDiamond(e);
+  } else if (selectedTool === "line") {
+    drawLine(e);
   }
 }
 
 shapeSelect.addEventListener("change", () => {
   selectedTool = shapeSelect.value;
+  if (selectedTool === "diamond") {
+    document.getElementById('fill-color').checked = true;
+  }
 });
 
 toolBtns.forEach(btn => {
@@ -164,7 +199,6 @@ saveImg.addEventListener("click", () => {
   link.click();
 });
 
-// Event listener for saving canvas as PDF
 savePdfBtn.addEventListener("click", () => {
   html2canvas(canvas).then((canvasImg) => {
     let imgData = canvasImg.toDataURL('image/png');
