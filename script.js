@@ -9,7 +9,10 @@ const canvas = document.querySelector("canvas"),
   savePdfBtn = document.querySelector(".save-pdf"),
   shapeSelect = document.querySelector("#shape-select"),
   ctx = canvas.getContext("2d");
-
+  function notify(value) {
+    var bar = document.getElementById('notification-bar');
+    bar.textContent = 'You selected: ' + value;
+}
 let prevMouseX, prevMouseY, snapshot,
   isDrawing = false,
   selectedTool = "brush",
@@ -160,7 +163,7 @@ const drawing = (e) => {
 shapeSelect.addEventListener("change", () => {
   selectedTool = shapeSelect.value;
   if (selectedTool === "diamond") {
-    document.getElementById('fill-color').checked = true;
+    document.getElementById('fill-color').checked = false;
   }
 });
 

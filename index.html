@@ -16,17 +16,27 @@
       <div class="row">
         <label class="title">Shapes</label>
         <select id="shape-select" class="options">
-          <option value="brush">Brush</option>
-          <option value="rectangle">Rectangle</option>
-          <option value="circle">Circle</option>
-          <option value="triangle">Triangle</option>
-          <option value="arrow">Arrow</option>
-          <option value="hexagon">Hexagon</option>
-          <option value="parallelogram">Parallelogram</option>
-          <option value="diamond">Diamond</option>
-          <option value="line">Line</option>
-        
-        </select>
+          <option class="brush" value="brush">🖌️ </option>
+          <option value="rectangle">▭ </option>
+          <option value="circle">⚫ </option>
+          <option value="triangle">🔺 </option>
+          <option value="arrow">➡️ </option>
+          <option value="hexagon">⬡ </option>
+          <option value="parallelogram">▱ </option>
+          <option value="diamond">💠 </option>
+          <option value="line">➖ </option>
+      </select>
+      <div id="notification-bar"></div>
+      <label class="title">Emoji</label>
+    <select id="shape-select" class="options" onchange="notify(this.value)">
+        <option value="brush">👍</option>
+        <option value="rectangle">👌</option>
+        <option value="circle">😀</option>
+        <option value="triangle">🤚</option>
+        <option value="arrow">😡</option>
+        <option value="hexagon">❤️</option>
+    </select>
+
         <li class="option">
           <input type="checkbox" id="fill-color">
           <label for="fill-color">Fill color</label>
@@ -77,7 +87,251 @@
       <canvas></canvas>
     </section>
   </div>
+  <script>
+const canvas = document.querySelector("canvas"),
+  toolBtns = document.querySelectorAll(".tool"),
+  fillColor = document.querySelector("#fill-color"),
+  sizeSlider = document.querySelector("#size-slider"),
+  colorBtns = document.querySelectorAll(".colors .option"),
+  colorPicker = document.querySelector("#color-picker"),
+  clearCanvas = document.querySelector(".clear-canvas"),
+  saveImg = document.querySelector(".save-img"),
+  savePdfBtn = document.querySelector(".save-pdf"),
+  shapeSelect = document.querySelector("#shape-select"),
+  ctx = canvas.getContext("2d");
+  function notify(value) {
+    var emoji;
+    switch (value) {
+        case "brush":
+            emoji = "👍";
+            break;
+        case "rectangle":
+            emoji = "👌";
+            break;
+        case "circle":
+            emoji = "😀";
+            break;
+        case "triangle":
+            emoji = "🤚";
+            break;
+        case "arrow":
+            emoji = "😡";
+            break;
+        case "hexagon":
+            emoji = "❤️";
+            break;
+        default:
+            emoji = "";
+    }
+    var bar = document.getElementById('notification-bar');
+    bar.textContent =  emoji;
+}
+let prevMouseX, prevMouseY, snapshot,
+  isDrawing = false,
+  selectedTool = "brush",
+  brushWidth = 5,
+  selectedColor = "#000";
 
+const setCanvasBackground = () => {
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = selectedColor;
+}
+
+window.addEventListener("load", () => {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  setCanvasBackground();
+});
+
+window.addEventListener("resize", () => {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  setCanvasBackground();
+});
+
+const drawRect = (e) => {
+  if (!fillColor.checked) {
+    return ctx.strokeRect(e.offsetX, e.offsetY, prevMouseX - e.offsetX, prevMouseY - e.offsetY);
+  }
+  ctx.fillRect(e.offsetX, e.offsetY, prevMouseX - e.offsetX, prevMouseY - e.offsetY);
+}
+
+const drawCircle = (e) => {
+  ctx.beginPath();
+  let radius = Math.sqrt(Math.pow((prevMouseX - e.offsetX), 2) + Math.pow((prevMouseY - e.offsetY), 2));
+  ctx.arc(prevMouseX, prevMouseY, radius, 0, 2 * Math.PI);
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawTriangle = (e) => {
+  ctx.beginPath();
+  ctx.moveTo(prevMouseX, prevMouseY);
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.lineTo(prevMouseX * 2 - e.offsetX, e.offsetY);
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawArrow = (e) => {
+  ctx.beginPath();
+  ctx.moveTo(prevMouseX, prevMouseY);
+  const angle = Math.atan2(e.offsetY - prevMouseY, e.offsetX - prevMouseX);
+  const arrowLength = 20;
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.lineTo(
+    e.offsetX - arrowLength * Math.cos(angle - Math.PI / 6),
+    e.offsetY - arrowLength * Math.sin(angle - Math.PI / 6)
+  );
+  ctx.moveTo(e.offsetX, e.offsetY);
+  ctx.lineTo(
+    e.offsetX - arrowLength * Math.cos(angle + Math.PI / 6),
+    e.offsetY - arrowLength * Math.sin(angle + Math.PI / 6)
+  );
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawHexagon = (e) => {
+  ctx.beginPath();
+  const sideLength = Math.abs(prevMouseX - e.offsetX);
+  ctx.moveTo(prevMouseX + sideLength * Math.cos(0), prevMouseY + sideLength * Math.sin(0));
+  for (let i = 1; i <= 6; i++) {
+    ctx.lineTo(
+      prevMouseX + sideLength * Math.cos(i * 2 * Math.PI / 6),
+      prevMouseY + sideLength * Math.sin(i * 2 * Math.PI / 6)
+    );
+  }
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawParallelogram = (e) => {
+  ctx.beginPath();
+  const width = Math.abs(prevMouseX - e.offsetX);
+  const height = Math.abs(prevMouseY - e.offsetY);
+  const tilt = prevMouseY > e.offsetY ? -1 : 1;
+  ctx.moveTo(prevMouseX, prevMouseY);
+  ctx.lineTo(prevMouseX + width, prevMouseY);
+  ctx.lineTo(prevMouseX + width - tilt * height, prevMouseY + height);
+  ctx.lineTo(prevMouseX - tilt * height, prevMouseY + height);
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawDiamond = (e) => {
+  ctx.beginPath();
+  ctx.moveTo((prevMouseX + e.offsetX) / 2, prevMouseY);
+  ctx.lineTo(e.offsetX, (prevMouseY + e.offsetY) / 2);
+  ctx.lineTo((prevMouseX + e.offsetX) / 2, e.offsetY);
+  ctx.lineTo(prevMouseX, (prevMouseY + e.offsetY) / 2);
+  ctx.closePath();
+  fillColor.checked ? ctx.fill() : ctx.stroke();
+}
+
+const drawLine = (e) => {
+  ctx.beginPath();
+  ctx.moveTo(prevMouseX, prevMouseY);
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+}
+
+const startDraw = (e) => {
+  isDrawing = true;
+  prevMouseX = e.offsetX;
+  prevMouseY = e.offsetY;
+  ctx.beginPath();
+  ctx.lineWidth = brushWidth;
+  ctx.strokeStyle = selectedColor;
+  ctx.fillStyle = selectedColor;
+  snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+const drawing = (e) => {
+  if (!isDrawing) return;
+  ctx.putImageData(snapshot, 0, 0);
+
+  if (selectedTool === "brush" || selectedTool === "eraser") {
+    ctx.strokeStyle = selectedTool === "eraser" ? "#fff" : selectedColor;
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
+  } else if (selectedTool === "rectangle") {
+    drawRect(e);
+  } else if (selectedTool === "circle") {
+    drawCircle(e);
+  } else if (selectedTool === "triangle") {
+    drawTriangle(e);
+  } else if (selectedTool === "arrow") {
+    drawArrow(e);
+  } else if (selectedTool === "hexagon") {
+    drawHexagon(e);
+  } else if (selectedTool === "parallelogram") {
+    drawParallelogram(e);
+  } else if (selectedTool === "diamond") {
+    drawDiamond(e);
+  } else if (selectedTool === "line") {
+    drawLine(e);
+  }
+}
+
+shapeSelect.addEventListener("change", () => {
+  selectedTool = shapeSelect.value;
+  if (selectedTool === "diamond") {
+    document.getElementById('fill-color').checked = false;
+  }
+});
+
+toolBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelector(".options .active").classList.remove("active");
+    btn.classList.add("active");
+    selectedTool = btn.id;
+  });
+});
+
+sizeSlider.addEventListener("change", () => brushWidth = sizeSlider.value);
+
+colorBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelector(".options .selected").classList.remove("selected");
+    btn.classList.add("selected");
+    selectedColor = window.getComputedStyle(btn).getPropertyValue("background-color");
+  });
+});
+
+colorPicker.addEventListener("change", () => {
+  colorPicker.parentElement.style.background = colorPicker.value;
+  colorPicker.parentElement.click();
+});
+
+clearCanvas.addEventListener("click", () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  setCanvasBackground();
+});
+
+saveImg.addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = `${Date.now()}.jpg`;
+  link.href = canvas.toDataURL();
+  link.click();
+});
+
+savePdfBtn.addEventListener("click", () => {
+  html2canvas(canvas).then((canvasImg) => {
+    let imgData = canvasImg.toDataURL('image/png');
+    let pdf = {
+      content: [{
+        image: imgData,
+        width: 500
+      }]
+    };
+    pdfMake.createPdf(pdf).download("canvas.pdf");
+  });
+});
+
+canvas.addEventListener("mousedown", startDraw);
+canvas.addEventListener("mousemove", drawing);
+canvas.addEventListener("mouseup", () => isDrawing = false);
+</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.5.0-beta4/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
